@@ -17,7 +17,7 @@ namespace AndroidMigrator
         static void Main(string[] args)
         {
             string source = @"C:\Users\anton\Documents\GitHub\MyIssues\Droid\Resources";
-            string target = @"C:\Users\anton\Documents\GitHub\questacion\code\myissuesmirror\app\src\main\res";
+            string target= @"C:\Users\anton\Documents\GitHub\questacion\MyIssuesMirror\app\src\main\res";
 
             var directories = Directory.GetDirectories(source);
             foreach (var directory in directories)
@@ -43,7 +43,7 @@ namespace AndroidMigrator
             var files = Directory.GetFiles(source);
             foreach (var file in files)
             {
-                ProcessFile(file, realTarget);
+                ProcessFile(file, realTarget, true);
             }
         }
 
@@ -51,6 +51,9 @@ namespace AndroidMigrator
         static List<String> AttributesToLookFor = new List<string>
         {
             "id",
+            "src",
+            "textCursorDrawable",
+            "background",
             "layout_toRightOf",
             "layout_toLeftOf",
             "layout_toStartOf",
@@ -59,10 +62,17 @@ namespace AndroidMigrator
             "layout_anchor",
             "layout"
     };
-        static void ProcessFile(string source, string target)
+
+
+
+        static HashSet<string> SkippableAttributes = new HashSet<string> {
+            "@android", "@color", "?attr" };
+        static void ProcessFile(string source, string target, bool xamarinToAndroid)
         {
             var stringFileName = Path.GetFileName(source);
-            var realTarget = Path.Combine(target, GetAndroidName(stringFileName));
+            var realTarget = Path.Combine(target, xamarinToAndroid ?
+                GetAndroidName(stringFileName) :
+                GetXamarinName(stringFileName));
 
             if (verboose)
                 Console.WriteLine($"Processing {stringFileName}:");
@@ -89,7 +99,9 @@ namespace AndroidMigrator
                             var atributo = node.Attribute(attr);
                             if (atributo != null)
                             {
-                                atributo.Value = ProcessXamarinToAndroidAttributeValue(atributo.Value);
+                                atributo.Value = xamarinToAndroid ?
+                ProcessXamarinToAndroidAttributeValue(atributo.Value) :
+                ProcessAndroidToXamarinAttributeValue(atributo.Value);
                             }
                         }
 
@@ -101,7 +113,9 @@ namespace AndroidMigrator
                                 var atributo = node.Attribute(androidNamespace + attr);
                                 if (atributo != null)
                                 {
-                                    atributo.Value = ProcessXamarinToAndroidAttributeValue(atributo.Value);
+                                    atributo.Value = xamarinToAndroid ?
+                ProcessXamarinToAndroidAttributeValue(atributo.Value) :
+                ProcessAndroidToXamarinAttributeValue(atributo.Value);
                                 }
                             }
 
@@ -115,7 +129,9 @@ namespace AndroidMigrator
                                 var atributo = node.Attribute(appNamespace + attr);
                                 if (atributo != null)
                                 {
-                                    atributo.Value = ProcessXamarinToAndroidAttributeValue(atributo.Value);
+                                    atributo.Value = xamarinToAndroid ?
+                ProcessXamarinToAndroidAttributeValue(atributo.Value) :
+                ProcessAndroidToXamarinAttributeValue(atributo.Value);
                                 }
                             }
 
@@ -143,7 +159,7 @@ namespace AndroidMigrator
         {
             if (verboose)
                 Console.WriteLine($"Copying {source}");
-            File.Copy(source, target);
+            File.Copy(source, target, true);
         }
 
         static string GetAndroidName(string fileName)
@@ -151,6 +167,14 @@ namespace AndroidMigrator
             var onlyName = Path.GetFileName(fileName);
 
             return XamarinToAndroidName(onlyName);
+
+        }
+
+        static string GetXamarinName(string fileName)
+        {
+            var onlyName = Path.GetFileName(fileName);
+
+            return AndroidToXamarinName(onlyName);
 
         }
 
@@ -163,6 +187,42 @@ namespace AndroidMigrator
                 return value.Substring(0, start) + XamarinToAndroidName(value.Substring(start));
             }
             return value;
+        }
+
+        static string ProcessAndroidToXamarinAttributeValue(string value)
+        {
+            var start = value.IndexOf('/') + 1;
+
+            if (start > 0)
+            {
+                var prefix = value.Substring(0, start - 1).Split(':')[0];
+                bool skipAttribute = SkippableAttributes.Contains(prefix);
+                if (!skipAttribute)
+                    return value.Substring(0, start) + AndroidToXamarinName(value.Substring(start));
+            }
+            return value;
+        }
+
+        static string AndroidToXamarinName(string name)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(Char.ToUpper(name[0]));
+            for (int i = 1; i < name.Length; i++)
+            {
+                var c = name[i];
+                if (c == '_')
+                {
+                    i++;
+                    c = name[i];
+                    sb.Append(Char.ToUpper(c));
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
         }
 
         static string XamarinToAndroidName(string name)
