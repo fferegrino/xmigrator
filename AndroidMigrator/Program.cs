@@ -7,31 +7,46 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace AndroidMigrator
+namespace Xmigrator
 {
     class Program
     {
 
-        static bool verboose = false;
+        static bool verboose = true;
         static bool errors = true;
         static void Main(string[] args)
         {
-            string source = @"C:\Users\anton\Documents\GitHub\MyIssues\Droid\Resources";
-            string target= @"C:\Users\anton\Documents\GitHub\questacion\MyIssuesMirror\app\src\main\res";
+			if (args.Length < 2)
+			{
+				Console.WriteLine("Usage:\nXmigrator [source] [destination]");
+				return;
+			}
+
+			string source = args[0]; // @"C:\Users\anton\Documents\GitHub\MyIssues\Droid\Resources";
+			string target = args[1]; // @"C:\Users\anton\Documents\GitHub\questacion\code\myissuesmirror\app\src\main\res";
+
+			var sourceDir = new DirectoryInfo(source);
+			var targetDir = new DirectoryInfo(target);
+
+			Console.WriteLine($"Source: {sourceDir.Name}");
+			Console.WriteLine($"Target: {targetDir.Name}");
+
+			var xamarinToAndroid = sourceDir.Name.EndsWith("Resources",StringComparison.Ordinal);
 
             var directories = Directory.GetDirectories(source);
             foreach (var directory in directories)
             {
-                ProcessDirectory(directory, target);
+				ProcessDirectory(directory, target, xamarinToAndroid);
             }
             Console.WriteLine("Done!");
             Console.ReadKey();
         }
 
-        static void ProcessDirectory(string source, string target)
+        static void ProcessDirectory(string source, string target, bool xamarinToAndroid)
         {
-            var directoryName = source.Split('\\').Last();
+			var directoryName = source.Split(new char []{ '\\', '/'}).Last();
             var realTarget = Path.Combine(target, directoryName);
+			Console.WriteLine("Realtarger: " + realTarget);
 
             if (verboose)
                 Console.WriteLine($"Processing {directoryName}:");
@@ -43,7 +58,7 @@ namespace AndroidMigrator
             var files = Directory.GetFiles(source);
             foreach (var file in files)
             {
-                ProcessFile(file, realTarget, true);
+				ProcessFile(file, realTarget, xamarinToAndroid);
             }
         }
 
@@ -137,11 +152,16 @@ namespace AndroidMigrator
 
                         }
                     }
-                    using (XmlTextWriter xtw = new XmlTextWriter(Path.ChangeExtension(realTarget, "xml"), Encoding.UTF8))
-                    {
-                        xtw.Formatting = Formatting.Indented;
-                        doc.WriteTo(xtw);
-                    }
+
+					using (var xtw = XmlWriter.Create(Path.ChangeExtension(realTarget, "xml"), new XmlWriterSettings()
+					{
+						Encoding = Encoding.UTF8,
+						NewLineOnAttributes = true,
+						Indent = true
+					}))
+					{
+						doc.WriteTo(xtw);
+					}
                 }
                 catch (Exception e)
                 {

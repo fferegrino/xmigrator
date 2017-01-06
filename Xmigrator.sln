@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidMigrator", "AndroidMigrator\AndroidMigrator.csproj", "{25C7BAF4-16A8-48B8-A3F8-408E1AA787D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmigrator", "AndroidMigrator\Xmigrator.csproj", "{25C7BAF4-16A8-48B8-A3F8-408E1AA787D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndroidMigratorTests", "AndroidMigratorTests\AndroidMigratorTests.csproj", "{92750216-FCD2-4E58-A64E-671F3B10BF81}"
 EndProject
